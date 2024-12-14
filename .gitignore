@@ -1,0 +1,7 @@
+.idea/
+venv/
+*_checkpoint.json
+out/
+dist/
+build/
+__pycache__/*
