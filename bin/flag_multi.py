@@ -1,5 +1,6 @@
 """
-Runs multiple classifiers on photos simultaneously
+Runs multiple classifiers on photos simultaneously.
+You can find all classifiers in the `lib.classifiers` module, and each one can be enabled/disabled via an init flag.
 """
 
 import click
