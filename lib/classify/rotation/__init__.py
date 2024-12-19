@@ -23,8 +23,18 @@ from iglovikov_helper_functions.utils.image_utils import load_rgb
 from torch import nn
 
 class RotatedClassifier(Classifier):
-    def __init__(self, confidence_threshold, enabled):
-        super().__init__(confidence_threshold, name="rotated", allowed_classes=None, enabled=enabled)
+    def __init__(
+        self,
+        confidence_threshold,
+        enabled=True
+    ):
+        super().__init__(
+            confidence_threshold,
+            name="rotated",
+            allowed_classes=None,
+            enabled=enabled
+        )
+
         if not enabled:
             pass
 

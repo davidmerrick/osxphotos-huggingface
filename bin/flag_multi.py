@@ -1,24 +1,34 @@
 """
-Runs multiple classifiers on photos simultaneously.
-You can find all classifiers in the `lib.classifiers` module, and each one can be enabled/disabled via an init flag.
+Runs multiple classifiers on photos simultaneously
 """
 
 import click
 
+from lib.classify.barcode import BarcodeClassifier
 from lib.classify.meme import MemeClassifier
 from lib.classify.qr import QRClassifier
-from lib.classify.screenshot import ScreenshotClassifier
-from lib.common_options import common_options
+from lib.classify.rotation import RotatedClassifier
+from lib.common_options import common_options, env
 from lib.photoflagger import PhotoFlagger
 
 
 @click.command()
 @common_options
-def flag_photos(verbose_mode, dry_run, reset, library_path, selected, confidence_threshold):
+@env
+def flag_photos(
+    verbose_mode,
+    dry_run,
+    reset,
+    library_path,
+    selected,
+    confidence_threshold,
+    env
+):
     classifiers = [
-        ScreenshotClassifier(confidence_threshold=confidence_threshold, enabled=False),
         MemeClassifier(confidence_threshold=confidence_threshold),
-        QRClassifier(confidence_threshold=confidence_threshold)
+        QRClassifier(confidence_threshold=confidence_threshold),
+        BarcodeClassifier(confidence_threshold=confidence_threshold),
+        RotatedClassifier(confidence_threshold=confidence_threshold)
     ]
 
     enabled_classifiers = [classifier for classifier in classifiers if classifier.enabled]
@@ -26,9 +36,13 @@ def flag_photos(verbose_mode, dry_run, reset, library_path, selected, confidence
     PhotoFlagger(
         verbose_mode=verbose_mode,
         library_path=library_path,
-        classifier=enabled_classifiers,
-        keystore_name="flag_multi.db"
-    ).flag_photos(dry_run=dry_run,reset=reset,selected=selected)
+        classifiers=enabled_classifiers,
+        keystore_name=f"{env}_flag_multi.db"
+    ).process_photos(
+        dry_run=dry_run,
+        reset=reset,
+        selected=selected
+    )
 
 
 if __name__ == "__main__":

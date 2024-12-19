@@ -1,0 +1,16 @@
+managed_albums:
+  - name: "Flagged: Deletion"
+    prefix: "Utils"
+    query_options:
+      - keywords:
+          - "flagged_qr"
+          - "flagged_barcode"
+
+training:
+  - name: "memes"
+    base_model: "google/vit-base-patch16-224"
+    output_path: "~/code/memes"
+    epochs: 10
+    label_album_mapping:
+      - ["meme", "Training: Memes"]
+      - ["non-meme", "Training: Not Memes"]

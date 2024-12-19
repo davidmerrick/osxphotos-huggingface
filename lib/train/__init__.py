@@ -1,3 +1,4 @@
+import os
 import random
 
 import torch
@@ -9,7 +10,7 @@ from torchvision import transforms
 from transformers import ViTForImageClassification, AdamW, AutoImageProcessor
 
 from lib.osxphotos_utils import construct_query_options
-from lib.osxphotos_utils.photoprocessor import PhotoProcessor
+from lib.photoflagger import PhotoFlagger
 
 
 class CustomDataset(Dataset):
@@ -33,21 +34,28 @@ class ModelTuner:
     A very osxphotos-specific model fine-tuner.
     Allows you to create albums for training in Apple Photos directly and pass a mapping of labels to these albums.
     """
-    def __init__(self, verbose_mode, library_path, output_path="./classifier"):
-        self.processor = PhotoProcessor(
+    def __init__(
+        self,
+        verbose_mode,
+        library_path,
+        output_path="/tmp/classifier",
+        base_model="google/vit-base-patch16-224"
+    ):
+        self.processor = PhotoFlagger(
             keystore_name="training",
             verbose_mode=verbose_mode,
-            library_path=library_path
+            library_path=library_path,
+            classifiers=[]
         )
         self.device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
-        self.output_path = output_path
+        self.output_path = os.path.expanduser(output_path)
         self.model = None
         self.optimizer = None
         self.criterion = CrossEntropyLoss()
+        self.base_model = base_model
 
-    def _get_preview_paths(self, album_name: str, dry_run: bool):
-        ctxs = self.processor.get_contexts(construct_query_options(album=[album_name]), dry_run)
-        return [ctx.preview_path for ctx in ctxs]
+    def _get_preview_paths(self, album_name: str):
+        return self.processor.get_preview_paths(construct_query_options(album=[album_name]))
 
     def _validate_model(self, val_loader):
         self.model.eval()
@@ -64,13 +72,13 @@ class ModelTuner:
 
         print(f"Validation Accuracy: {correct / total * 100:.2f}%")
 
-    def _prepare_datasets(self, label_album_mapping, dry_run):
+    def _prepare_datasets(self, label_album_mapping):
         labeled_data = []
         label_mapping = {label: idx for idx, (label, _) in enumerate(label_album_mapping)}
 
         # Collect and label data
         for label, album_name in label_album_mapping:
-            paths = self._get_preview_paths(album_name, dry_run)
+            paths = self._get_preview_paths(album_name)
             labeled_data.extend([(path, label_mapping[label]) for path in paths])
 
         random.shuffle(labeled_data)
@@ -92,14 +100,14 @@ class ModelTuner:
 
         return train_loader, val_loader, label_mapping
 
-    def train(self, label_album_mapping, dry_run=False, epochs=5):
-        train_loader, val_loader, label_mapping = self._prepare_datasets(label_album_mapping, dry_run)
+    def train(self, label_album_mapping, epochs=5):
+        train_loader, val_loader, label_mapping = self._prepare_datasets(label_album_mapping)
 
         num_labels = len(label_mapping)
 
         # Initialize model with the correct number of labels
         self.model = ViTForImageClassification.from_pretrained(
-            "google/vit-base-patch16-224",
+            self.base_model,
             num_labels=num_labels,
             id2label={v: k for k, v in label_mapping.items()},
             label2id=label_mapping,
@@ -134,7 +142,7 @@ class ModelTuner:
 
         # Save the model and processor
         self.model.save_pretrained(self.output_path)
-        processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224")
+        processor = AutoImageProcessor.from_pretrained(self.base_model)
         processor.save_pretrained(self.output_path)
 
         print(f"Model and processor saved to {self.output_path}")

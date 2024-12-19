@@ -9,9 +9,6 @@ from lib.classify import Classifier
 
 
 class QRClassifier(Classifier):
-    """
-    Borrowed heavily from https://www.reddit.com/r/osxphotos/comments/x6lp1z/comment/m0rikaz/?context=3
-    """
     def __init__(self, confidence_threshold, enabled=True):
         super().__init__(confidence_threshold, name="qr", allowed_classes=None, enabled=enabled)
 

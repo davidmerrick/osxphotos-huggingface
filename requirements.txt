@@ -39,7 +39,6 @@ Jinja2==3.1.4
 joblib==1.4.2
 jpeg4py==0.1.4
 lazy_loader==0.4
-loguru==0.7.3
 mac-alias==2.2.2
 macholib==1.16.3
 makelive==0.6.2
@@ -97,7 +96,6 @@ python-multipart==0.0.19
 pytimeparse2==1.7.1
 pytz==2024.2
 PyYAML==6.0.2
-rawpy @ file:///Users/davidmerrick/code/rawpy
 regex==2024.11.6
 requests==2.32.3
 rich==13.9.4
